@@ -1,0 +1,11 @@
+[package]
+name = "dali"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crossterm = "0.27"
+pyo3 = { version = "0.23", features = ["auto-initialize"] }
+libc = "0.2"
+unicode-segmentation = "1.10"
+rand = "0.8"
