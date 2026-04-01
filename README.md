@@ -1,26 +1,37 @@
 # DAli Editor
 
-A high-performance, Kilo-inspired terminal text editor with a Rust-Python hybrid intelligence engine.
+A high-performance, terminal text editor with a Rust-Python hybrid architecture. Optimized for sub-10ms latency and extensible intelligence.
 
 ## Command Reference
 
-### Editor Keys
-- **Ctrl + Q**: Quit
-- **Ctrl + F**: Search
-- **Ctrl + P**: Fuzzy Search
-- **Ctrl + S**: Save
-- **Arrow Keys**: Move Cursor
-- **:**: Enter Command Mode
+### Editor Hotkeys
+- **`Ctrl + Q`**: Quick Exit
+- **`Ctrl + S`**: Save Current Buffer
+- **`Ctrl + F`**: Incremental Text Search
+- **`Ctrl + P`**: Fuzzy File Finder
+- **`Ctrl + W`**: Cycle Focus Between Windows
+- **`Arrow Keys`**: Character-Atomic Navigation
+- **`:`**: Enter DAli-Term Command Mode
 
-### DAli-Term Commands (After pressing `:`)
-- **h**: Toggle Help Overlay
-- **s**: Save File
-- **q**: Quit Editor
-- **build**: Run Cargo Build / Run
-- **Esc**: Close Command Mode
-- **Enter**: Execute & Close
+### DAli-Term Commands
+| Command | Action |
+| :--- | :--- |
+| **`h`**, **`help`** | Toggle Help Overlay |
+| **`q`**, **`quit`** | Quit Editor |
+| **`s`**, **`save`** | Save Current File |
+| **`vsplit`** | Vertical Window Split |
+| **`vsplit term`** | Integrated Terminal Split |
+| **`pwd`** | Print Working Directory to Status Bar |
+| **`ls`** | Directory Content List mode |
+| **`tree`** | Recursive Directory Tree mode |
+| **`build`** | Execute Project Build & Run Pipeline |
+
+### View Modes
+- **Editor Mode**: Main text editing viewport.
+- **FileList Mode**: Interactive directory explorer.
+- **Help Mode**: Real-time hotkey and command reference.
 
 ## Architecture
-- **Core**: Rust (crossterm + custom Gap Buffer)
-- **Intelligence**: Python Bridge (PyO3)
-- **Modularity**: All files strictly < 121 lines.
+- **Core Engine**: Rust (Zero-Allocation UTF-8 GapBuffer)
+- **UI Logic**: Viewport-Aware Multi-Window System
+- **Intelligence**: Python Bridge via PyO3 (Non-Blocking FFI)

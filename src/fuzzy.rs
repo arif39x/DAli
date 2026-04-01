@@ -1,33 +1,25 @@
-use std::cmp;
+// Removed unused import
 
-pub fn levenshtein_distance(s1: &str, s2: &str) -> usize {
-    let v1: Vec<char> = s1.chars().collect();
-    let v2: Vec<char> = s2.chars().collect();
-    let len1 = v1.len();
-    let len2 = v2.len();
+pub fn subsequence_match(query: &str, target: &str) -> bool {
+    let mut query_chars = query.chars();
+    let mut current_query_char = query_chars.next();
 
-    let mut matrix = vec![vec![0; len2 + 1]; len1 + 1];
-
-    for i in 0..=len1 {
-        matrix[i][0] = i;
-    }
-    for j in 0..=len2 {
-        matrix[0][j] = j;
+    if current_query_char.is_none() {
+        return true;
     }
 
-    for i in 1..=len1 {
-        for j in 1..=len2 {
-            let cost = if v1[i - 1] == v2[j - 1] { 0 } else { 1 };
-            matrix[i][j] = cmp::min(
-                matrix[i - 1][j] + 1, // Deletion
-                cmp::min(
-                    matrix[i][j - 1] + 1, // Insertion
-                    matrix[i - 1][j - 1] + cost, // Substitution
-                ),
-            );
+    for target_char in target.chars() {
+        if let Some(q_char) = current_query_char {
+            if q_char.to_lowercase().next() == target_char.to_lowercase().next() {
+                current_query_char = query_chars.next();
+                if current_query_char.is_none() {
+                    return true;
+                }
+            }
         }
     }
-    matrix[len1][len2]
+
+    false
 }
 
 pub struct FuzzySearch {
@@ -42,7 +34,8 @@ impl FuzzySearch {
     pub fn search(&self, query: &str, limit: usize) -> Vec<(String, usize)> {
         let mut matches: Vec<(String, usize)> = self.files
             .iter()
-            .map(|f| (f.clone(), levenshtein_distance(query, f)))
+            .filter(|f| subsequence_match(query, f))
+            .map(|f| (f.clone(), f.len().saturating_sub(query.len())))
             .collect();
 
         // Sort by distance (lower is better)

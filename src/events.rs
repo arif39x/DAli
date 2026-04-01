@@ -15,11 +15,7 @@ impl EventLoop {
         }
     }
 
-    pub fn poll_event(&mut self) -> io::Result<Option<Event>> {
-        let timeout = self.tick_rate
-            .checked_sub(self.last_tick.elapsed())
-            .unwrap_or(Duration::from_secs(0));
-
+    pub fn poll_event(&mut self, timeout: Duration) -> io::Result<Option<Event>> {
         if event::poll(timeout)? {
             Ok(Some(event::read()?))
         } else {
@@ -27,12 +23,5 @@ impl EventLoop {
         }
     }
 
-    pub fn should_tick(&mut self) -> bool {
-        if self.last_tick.elapsed() >= self.tick_rate {
-            self.last_tick = Instant::now();
-            true
-        } else {
-            false
-        }
-    }
+    // should_tick is deprecated, we use event-driven updates now
 }

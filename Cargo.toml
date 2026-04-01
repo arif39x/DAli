@@ -9,3 +9,12 @@ pyo3 = { version = "0.23", features = ["auto-initialize"] }
 libc = "0.2"
 unicode-segmentation = "1.10"
 rand = "0.8"
+crossbeam-channel = "0.5"
+portable-pty = "0.8"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
