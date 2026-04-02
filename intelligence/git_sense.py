@@ -10,23 +10,22 @@ _GIT_CACHE = {
 CACHE_TTL = 5 # 5 seconds
 
 def get_git_status():
-    """
-    Returns the current git branch and modified file count.
-    Results are cached for CACHE_TTL seconds to avoid overhead.
-    """
+
+    #Returns the current git branch and modified file count.
+    
     now = time.time()
     if now - _GIT_CACHE["last_check"] < CACHE_TTL:
         return _GIT_CACHE["branch"], _GIT_CACHE["modified_count"]
 
     try:
-        # Get branch name
+        # branch name
         branch = subprocess.check_output(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
             stderr=subprocess.STDOUT,
             text=True
         ).strip()
         
-        # Get modified file count
+        # Gmodified file count
         status = subprocess.check_output(
             ["git", "status", "--porcelain"],
             stderr=subprocess.STDOUT,

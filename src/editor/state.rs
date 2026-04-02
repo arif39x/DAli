@@ -7,7 +7,7 @@ use crate::fuzzy::FuzzySearch;
 use std::error::Error;
 use std::time::Instant;
 
-use super::types::{ViewMode, Rect, Window, TerminalState};
+use super::types::{ViewMode, Rect, Window};
 
 pub struct Editor {
     pub(crate) terminal: Terminal,
@@ -18,6 +18,7 @@ pub struct Editor {
     pub(crate) bridge: IntelligenceBridge,
     pub(crate) highlighter: Highlighter,
     pub(crate) fuzzy: FuzzySearch,
+    pub(crate) clipboard: arboard::Clipboard,
     pub(crate) show_fuzzy: bool,
     pub(crate) fuzzy_query: String,
     pub(crate) is_searching: bool,
@@ -31,6 +32,8 @@ pub struct Editor {
     pub(crate) last_git_check: Instant,
     pub(crate) git_branch: String,
     pub(crate) git_modified: usize,
+    pub(crate) last_size: (u16, u16),
+    pub(crate) help_scroll: usize,
 }
 
 
@@ -45,6 +48,7 @@ impl Editor {
             viewport: Rect { x: 0, y: 0, width: cols, height: screen_rows },
             rowoff: 0, coloff: 0,
             filename: "untitled.rs".to_string(),
+            selection_start: None,
             dirty: true,
         };
 
@@ -60,6 +64,7 @@ impl Editor {
                 "src/main.rs".to_string(), "src/buffer.rs".to_string(), 
                 "src/editor/mod.rs".to_string(), "intelligence/senses.py".to_string()
             ]),
+            clipboard: arboard::Clipboard::new().expect("Failed to initialize clipboard"),
             show_fuzzy: false, fuzzy_query: String::new(),
             file_list: Vec::new(),
             is_searching: false, search_query: String::new(),
@@ -70,6 +75,8 @@ impl Editor {
             last_git_check: Instant::now(),
             git_branch: "No Git".to_string(),
             git_modified: 0,
+            last_size: (cols, rows),
+            help_scroll: 0,
         })
     }
 }

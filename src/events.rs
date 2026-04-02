@@ -23,5 +23,4 @@ impl EventLoop {
         }
     }
 
-    // should_tick is deprecated, we use event-driven updates now
 }

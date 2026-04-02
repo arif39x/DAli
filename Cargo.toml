@@ -11,6 +11,7 @@ unicode-segmentation = "1.10"
 rand = "0.8"
 crossbeam-channel = "0.5"
 portable-pty = "0.8"
+arboard = "3.4"
 
 [profile.release]
 opt-level = "z"

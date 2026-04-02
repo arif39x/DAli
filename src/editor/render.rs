@@ -1,5 +1,5 @@
 use super::state::Editor;
-use super::types::{Window, TerminalState};
+use super::types::Window;
 use crate::highlight::Highlighter;
 use std::error::Error;
 
@@ -18,8 +18,7 @@ impl Editor {
             self.terminal.set_color_24bit(100, 100, 100);
             self.terminal.write_content("~");
             self.terminal.reset_color();
-            // Clear only within the viewport? Hard with standard clear_line.
-            // I'll just write spaces for now or skip it if it's too complex.
+
         }
     }
 
@@ -144,15 +143,23 @@ impl Editor {
         self.draw_margin_at(viewport.x, viewport.y);
         let tokens = self.highlighter.highlight(&content, &extension);
         
+        let (sel_start, sel_end) = self.windows[index].selection_start.map(|start| {
+            let end = self.windows[index].buffer.cursor_pos();
+            if start < end { (start, end) } else { (end, start) }
+        }).unzip();
+
         let mut r_row = 0;
         let mut r_col = 0;
+        let mut char_idx = 0;
         
         for (text, token_type) in tokens {
             let color = Highlighter::get_color(token_type);
-            self.terminal.set_color_24bit(color.0, color.1, color.2);
             for c in text.chars() {
+                let in_selection = sel_start.map_or(false, |s| char_idx >= s && char_idx < sel_end.unwrap());
+                
                 if c == '\n' {
-                    r_row += 1; r_col = 0;
+                    self.terminal.reset_color();
+                    r_row += 1; r_col = 0; char_idx += 1;
                     if r_row >= rowoff && r_row < rowoff + viewport.height as usize {
                         self.draw_margin_at(viewport.x, viewport.y + (r_row - rowoff) as u16);
                     }
@@ -162,13 +169,21 @@ impl Editor {
                             let vx = viewport.x + (r_col - coloff) as u16 + 2;
                             let vy = viewport.y + (r_row - rowoff) as u16;
                             self.terminal.move_cursor(vx, vy);
+                            
+                            if in_selection {
+                                self.terminal.set_bg_color_24bit(60, 60, 100);
+                            } else {
+                                self.terminal.reset_color();
+                            }
+                            self.terminal.set_color_24bit(color.0, color.1, color.2);
                             self.terminal.write_content(&c.to_string());
                         }
                     }
-                    r_col += 1;
+                    r_col += 1; char_idx += c.len_utf8();
                 }
             }
         }
+        self.terminal.reset_color();
         
         let visible_row_count = (r_row + 1).saturating_sub(rowoff);
         for i in visible_row_count..viewport.height as usize {

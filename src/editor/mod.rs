@@ -44,6 +44,10 @@ impl Editor {
     pub fn run(&mut self) -> Result<(), Box<dyn Error>> {
         loop {
             let (cols, rows) = self.terminal.size().unwrap_or((80, 24));
+            if (cols, rows) != self.last_size {
+                self.terminal.clear_screen();
+                self.last_size = (cols, rows);
+            }
             let screen_rows = rows.saturating_sub(3);
             
             // Recalculate viewports if screen size changed

@@ -17,10 +17,9 @@ class IndentVisitor(ast.NodeVisitor):
         self.current_depth -= 1
 
 def calculate_indentation(buffer_context, target_line):
-    """
-    Calculates the correct indentation for a new line based on AST depth.
-    If AST parsing fails, it falls back to a regex-based approach.
-    """
+
+    #Calculating  the correct indentation for a new line based on AST depth.if ast parsing fails than regex
+
     try:
         tree = ast.parse(buffer_context)
         visitor = IndentVisitor(target_line)
@@ -28,7 +27,7 @@ def calculate_indentation(buffer_context, target_line):
         # Each depth level is usually 4 spaces
         return visitor.indent_level * 4
     except SyntaxError:
-        # Fallback: Regex-based logic
+        # Regex-based logic
         lines = buffer_context.splitlines()
         if not lines:
             return 0

@@ -17,18 +17,10 @@ SNIPPETS = {
 }
 
 def expand_snippet(trigger):
-    """
-    Returns the expanded snippet for the given trigger word.
-    If no snippet found, returns None.
-    """
     return SNIPPETS.get(trigger)
 
 def parse_placeholders(expanded):
-    """
-    Identifies the positions of placeholders ($0, $1, etc.)
-    Returns (raw_string, [(id, offset)])
-    """
-    # Simply returns the raw string for now. Positioning will be handled in Rust.
+
     return expanded
 
 if __name__ == "__main__":

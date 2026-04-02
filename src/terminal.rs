@@ -79,6 +79,10 @@ impl Terminal {
         self.buffer.append(&format!("\x1b[38;2;{};{};{}m", r, g, b));
     }
 
+    pub fn set_bg_color_24bit(&mut self, r: u8, g: u8, b: u8) {
+        self.buffer.append(&format!("\x1b[48;2;{};{};{}m", r, g, b));
+    }
+
     pub fn reset_color(&mut self) {
         self.buffer.append("\x1b[0m");
     }

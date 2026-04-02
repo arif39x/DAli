@@ -13,8 +13,14 @@ impl Editor {
             "  Ctrl-P : Fuzzy File Discovery",
             "  Ctrl-S : Quick Save",
             "  Ctrl-W : Switch Focus",
+            "  Ctrl-C : Copy Selection",
+            "  Ctrl-X : Cut Selection",
+            "  Ctrl-V : Paste From Clipboard",
+            "  Shift-Arrows: Select Text",
+            "  Tab    : Indent Selection/Snippet",
+            "  S-Tab  : Outdent Selection/Line",
             "  Arrows : Move Cursor",
-            "  :      : Enter DAli-Term", "",
+            "  Ctrl + E : Enter DAli-Term Command Mode", "",
             "DAli-Term Commands:",
             "  h      : Toggle this Help",
             "  s      : Save File",
@@ -26,16 +32,18 @@ impl Editor {
             "  build  : Compile and Run", "",
             "Press ESC or q to return to editor.",
         ];
-        for (i, line) in help_text.iter().enumerate() {
-            if (i as u16) < screen_rows {
-                self.terminal.move_cursor(0, i as u16);
+
+        let scroll = self.help_scroll;
+        for i in 0..screen_rows {
+            self.terminal.move_cursor(0, i as u16);
+            if let Some(line) = help_text.get(i as usize + scroll) {
+                if i == 0 && scroll == 0 { self.terminal.set_color_24bit(0, 255, 255); }
+                else { self.terminal.set_color_24bit(0, 200, 200); }
                 self.terminal.write_content(line);
                 self.terminal.clear_from_cursor_to_end();
+            } else {
+                self.terminal.clear_line();
             }
-        }
-        for i in (help_text.len() as u16)..screen_rows {
-            self.terminal.move_cursor(0, i);
-            self.terminal.clear_line();
         }
         self.draw_status_bar(screen_rows, screen_cols);
         self.draw_command_bar(screen_rows, screen_cols, 0, 0);

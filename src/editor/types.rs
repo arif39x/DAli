@@ -26,5 +26,6 @@ pub struct Window {
     pub(crate) rowoff: usize,
     pub(crate) coloff: usize,
     pub(crate) filename: String,
+    pub(crate) selection_start: Option<usize>,
     pub(crate) dirty: bool,
 }
