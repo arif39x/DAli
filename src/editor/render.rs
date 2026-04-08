@@ -5,8 +5,10 @@ use std::error::Error;
 
 impl Editor {
     pub(crate) fn draw_margin(&mut self, window: &Window) {
-        self.terminal.move_cursor(window.viewport.x, window.viewport.y);
-        self.terminal.set_color_24bit(100, 100, 100);
+        self.terminal
+            .move_cursor(window.viewport.x, window.viewport.y);
+        let color = self.config.theme.gutter_fg;
+        self.terminal.set_color_24bit(color[0], color[1], color[2]);
         self.terminal.write_content("~ ");
         self.terminal.reset_color();
     }
@@ -15,10 +17,10 @@ impl Editor {
         let viewport = window.viewport;
         for r in (last_row + 1)..viewport.height as usize {
             self.terminal.move_cursor(viewport.x, viewport.y + r as u16);
-            self.terminal.set_color_24bit(100, 100, 100);
+            let color = self.config.theme.gutter_fg;
+            self.terminal.set_color_24bit(color[0], color[1], color[2]);
             self.terminal.write_content("~");
             self.terminal.reset_color();
-
         }
     }
 
@@ -29,21 +31,40 @@ impl Editor {
 
         let rows = screen_rows + 3;
         self.terminal.move_cursor(0, rows - 2);
-        let mut status = format!(" [DAli] {} | Row: {} Col: {} ", focused.filename, cur_row + 1, cur_col + 1);
+        let mut status = format!(
+            " [DAli] {} | Row: {} Col: {} ",
+            focused.filename,
+            cur_row + 1,
+            cur_col + 1
+        );
         if self.is_searching {
             self.terminal.set_color_24bit(255, 255, 100);
             status = format!(" SEARCH: {} (Esc to exit)", self.search_query);
         } else if self.status_time.elapsed().as_secs() < 5 {
-            if self.status_msg.starts_with("HELP") { self.terminal.set_color_24bit(255, 255, 100); }
-            else if self.status_msg.starts_with("ERROR") { self.terminal.set_color_24bit(255, 100, 100); }
-            else if self.status_msg.starts_with("SUCCESS") { self.terminal.set_color_24bit(100, 255, 100); }
-            else { self.terminal.set_color_24bit(0, 150, 150); }
+            if self.status_msg.starts_with("HELP") {
+                self.terminal.set_color_24bit(255, 255, 100);
+            } else if self.status_msg.starts_with("ERROR") {
+                self.terminal.set_color_24bit(255, 100, 100);
+            } else if self.status_msg.starts_with("SUCCESS") {
+                self.terminal.set_color_24bit(100, 255, 100);
+            } else {
+                let color = self.config.theme.status_bar_bg;
+                self.terminal.set_color_24bit(color[0], color[1], color[2]);
+            }
             status = self.status_msg.clone();
         } else {
-            self.terminal.set_color_24bit(0, 150, 150);
-            status = format!(" {} | Git: {} (+{})", status, self.git_branch, self.git_modified);
+            let color = self.config.theme.status_bar_bg;
+            self.terminal.set_color_24bit(color[0], color[1], color[2]);
+            status = format!(
+                " {} | Git: {} (+{})",
+                status, self.git_branch, self.git_modified
+            );
         }
-        let truncated = if status.len() > screen_cols as usize { &status[..screen_cols as usize] } else { &status };
+        let truncated = if status.len() > screen_cols as usize {
+            &status[..screen_cols as usize]
+        } else {
+            &status
+        };
         self.terminal.write_content(truncated);
         self.terminal.clear_from_cursor_to_end();
         self.terminal.reset_color();
@@ -51,16 +72,19 @@ impl Editor {
 
     pub(crate) fn draw_fuzzy_panel(&mut self, screen_rows: u16, _screen_cols: u16) {
         if self.show_fuzzy && screen_rows > 5 {
-            let rows = screen_rows + 3; let fuzzy_row = rows.saturating_sub(8);
+            let rows = screen_rows + 3;
+            let fuzzy_row = rows.saturating_sub(8);
             self.terminal.move_cursor(0, fuzzy_row);
             self.terminal.set_color_24bit(255, 255, 100);
-            self.terminal.write_content(&format!(" Fuzzy Search: {}", self.fuzzy_query));
+            self.terminal
+                .write_content(&format!(" Fuzzy Search: {}", self.fuzzy_query));
             self.terminal.clear_from_cursor_to_end();
             let matches = self.fuzzy.search(&self.fuzzy_query, 5);
             for (i, (file, dist)) in matches.iter().enumerate() {
                 if fuzzy_row + 1 + (i as u16) < rows - 3 {
                     self.terminal.move_cursor(0, fuzzy_row + 1 + (i as u16));
-                    self.terminal.write_content(&format!("  {} (dist: {})", file, dist));
+                    self.terminal
+                        .write_content(&format!("  {} (dist: {})", file, dist));
                     self.terminal.clear_from_cursor_to_end();
                 }
             }
@@ -68,38 +92,60 @@ impl Editor {
         }
     }
 
-    pub(crate) fn draw_command_bar(&mut self, screen_rows: u16, _screen_cols: u16, cur_row: usize, cur_col: usize) {
+    pub(crate) fn draw_command_bar(
+        &mut self,
+        screen_rows: u16,
+        _screen_cols: u16,
+        cur_row: usize,
+        cur_col: usize,
+    ) {
         let r = screen_rows + 3;
         self.terminal.move_cursor(0, r - 2);
         self.terminal.set_color_24bit(60, 60, 60);
-        self.terminal.write_content(&"-".repeat(_screen_cols as usize));
+        self.terminal
+            .write_content(&"-".repeat(_screen_cols as usize));
         self.terminal.move_cursor(0, r - 1);
         self.terminal.set_color_24bit(30, 30, 30);
-        self.terminal.write_content(&" ".repeat(_screen_cols as usize));
+        self.terminal
+            .write_content(&" ".repeat(_screen_cols as usize));
         self.terminal.move_cursor(0, r - 1);
         if self.is_command_mode {
-            self.terminal.set_color_24bit(0, 255, 0); self.terminal.write_content(" $ ");
-            self.terminal.set_color_24bit(255, 255, 255); self.terminal.write_content(&self.command_buffer);
-            self.terminal.move_cursor((self.command_buffer.len() + 3) as u16, r - 1);
+            self.terminal.set_color_24bit(0, 255, 0);
+            self.terminal.write_content(" $ ");
+            self.terminal.set_color_24bit(255, 255, 255);
+            self.terminal.write_content(&self.command_buffer);
+            self.terminal
+                .move_cursor((self.command_buffer.len() + 3) as u16, r - 1);
         } else {
             self.terminal.set_color_24bit(120, 120, 120);
             self.terminal.write_content(" $ (Press : for command)");
             let focused = &self.windows[self.focused_index];
-            let (v_col, v_row) = ((cur_col as i32 - focused.coloff as i32 + 2) as u16 + focused.viewport.x, (cur_row as i32 - focused.rowoff as i32) as u16 + focused.viewport.y);
+            let (v_col, v_row) = (
+                (cur_col as i32 - focused.coloff as i32 + 2) as u16 + focused.viewport.x,
+                (cur_row as i32 - focused.rowoff as i32) as u16 + focused.viewport.y,
+            );
             self.terminal.move_cursor(v_col, v_row);
         }
-        self.terminal.reset_color(); self.terminal.show_cursor();
+        self.terminal.reset_color();
+        self.terminal.show_cursor();
     }
 
-    pub(crate) fn draw_file_list(&mut self, screen_rows: u16, screen_cols: u16) -> Result<(), Box<dyn std::error::Error>> {
+    pub(crate) fn draw_file_list(
+        &mut self,
+        screen_rows: u16,
+        screen_cols: u16,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.terminal.move_cursor(0, 0);
         self.terminal.set_color_24bit(100, 255, 100);
-        self.terminal.write_content(" --- FILE EXPLORER (Esc to exit) --- ");
+        self.terminal
+            .write_content(" --- FILE EXPLORER (Esc to exit) --- ");
         self.terminal.reset_color();
         self.terminal.clear_line();
 
         for (i, file) in self.file_list.iter().enumerate() {
-            if (i + 1) >= screen_rows as usize { break; }
+            if (i + 1) >= screen_rows as usize {
+                break;
+            }
             self.terminal.move_cursor(0, (i + 1) as u16);
             if file.ends_with('/') {
                 self.terminal.set_color_24bit(100, 150, 255); // Directory Blue
@@ -110,9 +156,11 @@ impl Editor {
             self.terminal.reset_color();
             self.terminal.clear_line();
         }
-        
+
         for i in (self.file_list.len() + 1)..screen_rows as usize {
-            if i >= screen_rows as usize { break; }
+            if i >= screen_rows as usize {
+                break;
+            }
             self.terminal.move_cursor(0, i as u16);
             self.terminal.clear_line();
         }
@@ -126,68 +174,84 @@ impl Editor {
     pub(crate) fn draw_window(&mut self, index: usize) -> Result<(), Box<dyn Error>> {
         let (viewport, rowoff, coloff, _filename, extension, content) = {
             let window = &self.windows[index];
-            if window.terminal_state.is_some() {
-                let term_buffer = window.terminal_state.as_ref().unwrap().buffer.clone();
-                return self.draw_terminal_window(index, term_buffer);
-            }
             (
                 window.viewport,
                 window.rowoff,
                 window.coloff,
                 window.filename.clone(),
-                window.filename.split('.').last().unwrap_or("rs").to_string(),
-                window.buffer.content()
+                window
+                    .filename
+                    .split('.')
+                    .last()
+                    .unwrap_or("rs")
+                    .to_string(),
+                window.buffer.content(),
             )
         };
 
         self.draw_margin_at(viewport.x, viewport.y);
         let tokens = self.highlighter.highlight(&content, &extension);
-        
-        let (sel_start, sel_end) = self.windows[index].selection_start.map(|start| {
-            let end = self.windows[index].buffer.cursor_pos();
-            if start < end { (start, end) } else { (end, start) }
-        }).unzip();
+
+        let (sel_start, sel_end) = self.windows[index]
+            .selection_start
+            .map(|start| {
+                let end = self.windows[index].buffer.cursor_pos();
+                if start < end {
+                    (start, end)
+                } else {
+                    (end, start)
+                }
+            })
+            .unzip();
 
         let mut r_row = 0;
         let mut r_col = 0;
         let mut char_idx = 0;
-        
+
         for (text, token_type) in tokens {
             let color = Highlighter::get_color(token_type);
             for c in text.chars() {
-                let in_selection = sel_start.map_or(false, |s| char_idx >= s && char_idx < sel_end.unwrap());
-                
+                let in_selection =
+                    sel_start.map_or(false, |s| char_idx >= s && char_idx < sel_end.unwrap());
+
                 if c == '\n' {
                     self.terminal.reset_color();
-                    r_row += 1; r_col = 0; char_idx += 1;
+                    r_row += 1;
+                    r_col = 0;
+                    char_idx += 1;
                     if r_row >= rowoff && r_row < rowoff + viewport.height as usize {
                         self.draw_margin_at(viewport.x, viewport.y + (r_row - rowoff) as u16);
                     }
                 } else {
                     if r_row >= rowoff && r_row < rowoff + viewport.height as usize {
-                        if r_col >= coloff && r_col < coloff + (viewport.width.saturating_sub(2)) as usize {
+                        if r_col >= coloff
+                            && r_col < coloff + (viewport.width.saturating_sub(2)) as usize
+                        {
                             let vx = viewport.x + (r_col - coloff) as u16 + 2;
                             let vy = viewport.y + (r_row - rowoff) as u16;
                             self.terminal.move_cursor(vx, vy);
-                            
+
                             if in_selection {
-                                self.terminal.set_bg_color_24bit(60, 60, 100);
+                                let bg = self.config.theme.selection_bg;
+                                self.terminal.set_bg_color_24bit(bg[0], bg[1], bg[2]);
                             } else {
                                 self.terminal.reset_color();
                             }
+                            let color = self.get_token_color(token_type);
                             self.terminal.set_color_24bit(color.0, color.1, color.2);
                             self.terminal.write_content(&c.to_string());
                         }
                     }
-                    r_col += 1; char_idx += c.len_utf8();
+                    r_col += 1;
+                    char_idx += c.len_utf8();
                 }
             }
         }
         self.terminal.reset_color();
-        
+
         let visible_row_count = (r_row + 1).saturating_sub(rowoff);
         for i in visible_row_count..viewport.height as usize {
-             self.draw_margin_at(viewport.x, viewport.y + i as u16);
+            self.draw_margin_at(viewport.x, viewport.y + i as u16);
         }
 
         self.windows[index].dirty = false;
@@ -196,8 +260,26 @@ impl Editor {
 
     pub(crate) fn draw_margin_at(&mut self, x: u16, y: u16) {
         self.terminal.move_cursor(x, y);
-        self.terminal.set_color_24bit(100, 100, 100);
+        let color = self.config.theme.gutter_fg;
+        self.terminal.set_color_24bit(color[0], color[1], color[2]);
         self.terminal.write_content("~ ");
         self.terminal.reset_color();
+    }
+
+    fn get_token_color(&self, token_type: crate::highlight::TokenType) -> (u8, u8, u8) {
+        use crate::highlight::TokenType;
+        let theme = &self.config.theme;
+        match token_type {
+            TokenType::Keyword => (theme.keyword[0], theme.keyword[1], theme.keyword[2]),
+            TokenType::Type => (
+                theme.type_color[0],
+                theme.type_color[1],
+                theme.type_color[2],
+            ),
+            TokenType::String => (theme.string[0], theme.string[1], theme.string[2]),
+            TokenType::Number => (theme.number[0], theme.number[1], theme.number[2]),
+            TokenType::Comment => (theme.comment[0], theme.comment[1], theme.comment[2]),
+            TokenType::Normal => (theme.normal[0], theme.normal[1], theme.normal[2]),
+        }
     }
 }

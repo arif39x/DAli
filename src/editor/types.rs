@@ -15,13 +15,8 @@ pub struct Rect {
     pub height: u16,
 }
 
-pub struct TerminalState {
-    pub(crate) buffer: Vec<String>,
-}
-
 pub struct Window {
     pub(crate) buffer: GapBuffer,
-    pub(crate) terminal_state: Option<TerminalState>,
     pub(crate) viewport: Rect,
     pub(crate) rowoff: usize,
     pub(crate) coloff: usize,

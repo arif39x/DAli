@@ -1,13 +1,13 @@
-use crate::terminal::Terminal;
+use crate::bridge::IntelligenceBridge;
 use crate::buffer::GapBuffer;
 use crate::events::EventLoop;
-use crate::bridge::IntelligenceBridge;
-use crate::highlight::Highlighter;
 use crate::fuzzy::FuzzySearch;
+use crate::highlight::Highlighter;
+use crate::terminal::Terminal;
 use std::error::Error;
 use std::time::Instant;
 
-use super::types::{ViewMode, Rect, Window};
+use super::types::{Rect, ViewMode, Window};
 
 pub struct Editor {
     pub(crate) terminal: Terminal,
@@ -34,19 +34,25 @@ pub struct Editor {
     pub(crate) git_modified: usize,
     pub(crate) last_size: (u16, u16),
     pub(crate) help_scroll: usize,
+    pub(crate) text_ops: super::text_ops::TextOps,
+    pub(crate) config: crate::config::DaliConfig,
 }
-
 
 impl Editor {
     pub fn new() -> Result<Self, Box<dyn Error>> {
         let (cols, rows) = Terminal::new()?.size().unwrap_or((80, 24));
         let screen_rows = rows.saturating_sub(3);
-        
+
         let initial_window = Window {
             buffer: GapBuffer::new(1024),
-            terminal_state: None,
-            viewport: Rect { x: 0, y: 0, width: cols, height: screen_rows },
-            rowoff: 0, coloff: 0,
+            viewport: Rect {
+                x: 0,
+                y: 0,
+                width: cols,
+                height: screen_rows,
+            },
+            rowoff: 0,
+            coloff: 0,
             filename: "untitled.rs".to_string(),
             selection_start: None,
             dirty: true,
@@ -61,14 +67,19 @@ impl Editor {
             bridge: IntelligenceBridge::new(),
             highlighter: Highlighter::new(),
             fuzzy: FuzzySearch::new(vec![
-                "src/main.rs".to_string(), "src/buffer.rs".to_string(), 
-                "src/editor/mod.rs".to_string(), "intelligence/senses.py".to_string()
+                "src/main.rs".to_string(),
+                "src/buffer.rs".to_string(),
+                "src/editor/mod.rs".to_string(),
+                "intelligence/senses.py".to_string(),
             ]),
             clipboard: arboard::Clipboard::new().expect("Failed to initialize clipboard"),
-            show_fuzzy: false, fuzzy_query: String::new(),
+            show_fuzzy: false,
+            fuzzy_query: String::new(),
             file_list: Vec::new(),
-            is_searching: false, search_query: String::new(),
-            is_command_mode: false, command_buffer: String::new(),
+            is_searching: false,
+            search_query: String::new(),
+            is_command_mode: false,
+            command_buffer: String::new(),
             status_msg: String::from("HELP: : for command | Ctrl-Q = quit | Ctrl-F = find"),
             status_time: Instant::now(),
             show_help_overlay: false,
@@ -77,6 +88,8 @@ impl Editor {
             git_modified: 0,
             last_size: (cols, rows),
             help_scroll: 0,
+            text_ops: super::text_ops::TextOps::new(),
+            config: crate::config::load_config(),
         })
     }
 }

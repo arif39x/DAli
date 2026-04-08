@@ -1,40 +1,57 @@
 # DAli Editor
 
-A high-performance, terminal text editor with a Rust-Python hybrid architecture.
+A high-performance, memory-safe, deterministic terminal text editor built in pure Rust.
 
-## Command Reference
+## Principles
+- **Speed**: Minimal latency, GapBuffer-backed text engine.
+- **Safety**: Built on Rust's strong safety guarantees.
+- **Privacy**: **STRICT NO-AI POLICY**. All operations are local and deterministic.
+- **Polish**: Professional-grade developer ergonomics.
 
-### Editor Hotkeys
-- **`Ctrl + Q`**: Quick Exit
-- **`Ctrl + S`**: Save Current Buffer
-- **`Ctrl + F`**: Incremental Text Search
+## Configuration
+DAli is highly configurable via TOML. Create your configuration at `~/.config/dali/dali.toml`:
+
+```toml
+[keybindings]
+quit = "ctrl-q"
+save = "ctrl-s"
+find = "ctrl-f"
+command = "ctrl-e"
+fuzzy = "ctrl-p"
+
+[theme]
+status_bar_bg = [30, 30, 60]
+status_bar_fg = [255, 255, 255]
+gutter_fg = [100, 100, 120]
+selection_bg = [80, 80, 150]
+
+[editor]
+tab_size = 4
+line_numbers = true
+```
+
+## Features
+- **Deterministic Indentation**: Context-aware auto-indentation in pure Rust.
+- **Native Snippets**: High-speed snippet expansion via `Tab`.
+- **Fuzzy Finder**: Blazing fast file search with fuzzy matching.
+- **Multi-Window**: Professional split-view support.
+- **Syntax Highlighting**: Real-time language-aware coloring.
+- **Git Integration**: Background branch and modified status tracking.
+
+## Usage
+### Hotkeys (Default)
+- **`Ctrl + Q`**: Quit
+- **`Ctrl + E` / `:`**: Command Mode
 - **`Ctrl + P`**: Fuzzy File Finder
-- **`Ctrl + W`**: Cycle Focus Between Windows
-- **`Ctrl + C`**: Copy selection to clipboard
-- **`Ctrl + X`**: Cut selection to clipboard
-- **`Ctrl + V`**: Paste from clipboard
-- **`Shift + Arrow Keys`**: Text Selection
-- **`Tab`**: Indent selection or Expand Snippet
-- **`Shift + Tab`**: Outdent selection or current line
-- **`Ctrl + E`**: Enter DAli-Term Command Mode
-- **`Arrow Keys`**: Character-Atomic Navigation
+- **`Ctrl + F`**: Search in Buffer
+- **`Ctrl + S`**: Save
+- **`Tab`**: Expand Snippet or Indent
 
-### DAli-Term Commands
+### Command Mode
 | Command | Action |
 | :--- | :--- |
-| **`h`**, **`help`** | Toggle Help Overlay |
-| **`q`**, **`quit`** | Quit Editor |
-| **`s`**, **`save`** | Save Current File |
-| **`vsplit`** | Vertical Window Split |
-| **`vsplit term`**, **`term`** | Integrated Terminal Split |
-| **`1`**, **`2`**, **`...`** | Jump to specific window number |
-| **`pwd`** | Print Working Directory to Status Bar |
-| **`ls`** | Directory Content List mode |
-| **`tree`** | Recursive Directory Tree mode |
-| **`build`** | Execute Project Build & Run Pipeline |
-
-### View Modes
-- **Editor Mode**: Main text editing viewport.
-- **FileList Mode**: Interactive directory explorer.
-- **Help Mode**: Real-time hotkey and command reference.
-
+| `:h` | Help Overlay |
+| `:vsplit` | Vertical Split |
+| `:ls` | File Explorer |
+| `:tree` | Tree Explorer |
+| `:1`, `:2` | Switch Window |

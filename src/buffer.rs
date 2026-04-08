@@ -11,6 +11,7 @@ pub struct GapBuffer {
     pub(crate) undo_stack: Vec<EditAction>,
     pub(crate) redo_stack: Vec<EditAction>,
     pub(crate) line_starts: Vec<usize>,
+    pub revision_id: u64,
 }
 
 impl GapBuffer {
@@ -22,7 +23,16 @@ impl GapBuffer {
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             line_starts: vec![0],
+            revision_id: 0,
         }
+    }
+
+    fn increment_revision(&mut self) {
+        self.revision_id = self.revision_id.wrapping_add(1);
+    }
+
+    pub fn get_revision(&self) -> u64 {
+        self.revision_id
     }
 
     fn grow(&mut self) {
@@ -53,28 +63,29 @@ impl GapBuffer {
 
         self.undo_stack.push(EditAction::Insert(self.gap_start, c));
         self.redo_stack.clear();
-        
+
         self.buffer[self.gap_start..self.gap_start + len].copy_from_slice(encoded.as_bytes());
         self.gap_start += len;
         self.update_line_starts();
+        self.increment_revision();
     }
 
     pub fn delete(&mut self) -> Option<char> {
         if self.gap_start > 0 {
-            // Find the start of the previous character
             let mut pos = self.gap_start - 1;
             while pos > 0 && (self.buffer[pos] & 0xC0) == 0x80 {
                 pos -= 1;
             }
-            
+
             let c_bytes = &self.buffer[pos..self.gap_start];
             let c_str = std::str::from_utf8(c_bytes).ok()?;
             let c = c_str.chars().next()?;
-            
+
             self.undo_stack.push(EditAction::Delete(pos, c));
             self.redo_stack.clear();
             self.gap_start = pos;
             self.update_line_starts();
+            self.increment_revision();
             Some(c)
         } else {
             None
@@ -87,7 +98,7 @@ impl GapBuffer {
             match action {
                 EditAction::Insert(pos, c) => {
                     self.move_cursor(pos + c.len_utf8());
-                    self.delete(); // This handles UTF-8 delete
+                    self.delete();
                     self.redo_stack.push(EditAction::Insert(pos, c));
                 }
                 EditAction::Delete(pos, c) => {
@@ -96,8 +107,9 @@ impl GapBuffer {
                     self.redo_stack.push(EditAction::Delete(pos, c));
                 }
             }
-            self.move_cursor(current_pos.min(self.content().len())); // Try to restore cursor
+            self.move_cursor(current_pos.min(self.content().len()));
             self.update_line_starts();
+            self.increment_revision();
         }
     }
 
@@ -116,6 +128,7 @@ impl GapBuffer {
                 }
             }
             self.update_line_starts();
+            self.increment_revision();
         }
     }
     

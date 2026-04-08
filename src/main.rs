@@ -5,6 +5,7 @@ mod bridge;
 mod highlight;
 mod fuzzy;
 mod editor;
+mod config;
 
 use editor::Editor;
 use std::error::Error;

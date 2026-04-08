@@ -36,10 +36,21 @@ impl Highlighter {
         let rust_syntax = SyntaxDef {
             name: "Rust".to_string(),
             extensions: vec!["rs".to_string()],
-            keywords: vec!["fn", "let", "mut", "if", "else", "match", "loop", "for", "in", "break", "continue", "return", "mod", "use", "pub", "struct", "enum", "impl", "trait", "type", "where", "Self", "self"]
-                .into_iter().map(|s| s.to_string()).collect(),
-            types: vec!["i32", "u32", "i64", "u64", "f32", "f64", "bool", "char", "str", "String", "Vec", "Option", "Result"]
-                .into_iter().map(|s| s.to_string()).collect(),
+            keywords: vec![
+                "fn", "let", "mut", "if", "else", "match", "loop", "for", "in", "break",
+                "continue", "return", "mod", "use", "pub", "struct", "enum", "impl", "trait",
+                "type", "where", "Self", "self",
+            ]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+            types: vec![
+                "i32", "u32", "i64", "u64", "f32", "f64", "bool", "char", "str", "String", "Vec",
+                "Option", "Result",
+            ]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
             singleline_comment: "//".to_string(),
             multiline_start: Some("/*".to_string()),
             multiline_end: Some("*/".to_string()),
@@ -48,15 +59,26 @@ impl Highlighter {
         let python_syntax = SyntaxDef {
             name: "Python".to_string(),
             extensions: vec!["py".to_string()],
-            keywords: vec!["def", "class", "if", "elif", "else", "for", "while", "return", "import", "from", "as", "with", "try", "except", "finally", "raise", "lambda", "yield", "pass", "break", "continue"]
-                .into_iter().map(|s| s.to_string()).collect(),
-            types: vec!["True", "False", "None", "int", "float", "str", "list", "dict", "set", "tuple", "bool"]
-                .into_iter().map(|s| s.to_string()).collect(),
+            keywords: vec![
+                "def", "class", "if", "elif", "else", "for", "while", "return", "import", "from",
+                "as", "with", "try", "except", "finally", "raise", "lambda", "yield", "pass",
+                "break", "continue",
+            ]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
+            types: vec![
+                "True", "False", "None", "int", "float", "str", "list", "dict", "set", "tuple",
+                "bool",
+            ]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect(),
             singleline_comment: "#".to_string(),
             multiline_start: None,
             multiline_end: None,
         };
-        
+
         Self {
             hldb: vec![rust_syntax, python_syntax],
             line_cache: HashMap::new(),
@@ -66,8 +88,10 @@ impl Highlighter {
     pub fn highlight(&mut self, content: &str, extension: &str) -> Vec<(String, TokenType)> {
         let mut tokens = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
-        
-        let syntax = self.hldb.iter()
+
+        let syntax = self
+            .hldb
+            .iter()
             .find(|s| s.extensions.contains(&extension.to_string()))
             .unwrap_or(&self.hldb[0]);
 
@@ -81,7 +105,8 @@ impl Highlighter {
             } else {
                 let mut line_tokens = Vec::new();
                 let next_state = self.tokenize_line(line, syntax, &mut line_tokens, current_state);
-                self.line_cache.insert(cache_key, (line_tokens.clone(), next_state));
+                self.line_cache
+                    .insert(cache_key, (line_tokens.clone(), next_state));
                 tokens.extend(line_tokens);
                 current_state = next_state;
             }
@@ -91,7 +116,13 @@ impl Highlighter {
         tokens
     }
 
-    fn tokenize_line(&self, line: &str, syntax: &SyntaxDef, tokens: &mut Vec<(String, TokenType)>, start_state: LexerState) -> LexerState {
+    fn tokenize_line(
+        &self,
+        line: &str,
+        syntax: &SyntaxDef,
+        tokens: &mut Vec<(String, TokenType)>,
+        start_state: LexerState,
+    ) -> LexerState {
         let mut current_word = String::new();
         let mut in_string = false;
         let mut current_state = start_state;
@@ -134,7 +165,10 @@ impl Highlighter {
             }
 
             // Handle single-line comments
-            if !in_string && current_state == LexerState::Normal && c == syntax.singleline_comment.chars().next().unwrap() {
+            if !in_string
+                && current_state == LexerState::Normal
+                && c == syntax.singleline_comment.chars().next().unwrap()
+            {
                 if let Some(&next_c) = chars.peek() {
                     if next_c == syntax.singleline_comment.chars().nth(1).unwrap_or(' ') {
                         if !current_word.is_empty() {
@@ -211,13 +245,6 @@ impl Highlighter {
     }
 
     pub fn get_color(token_type: TokenType) -> (u8, u8, u8) {
-        match token_type {
-            TokenType::Keyword => (255, 120, 100), // Salmon Red
-            TokenType::Type => (100, 200, 255),    // Sky Blue
-            TokenType::String => (150, 255, 150),  // Light Green
-            TokenType::Number => (255, 200, 100),  // Orange
-            TokenType::Comment => (120, 120, 120), // Gray
-            TokenType::Normal => (255, 255, 255),  // White
-        }
+        (255, 255, 255)
     }
 }
