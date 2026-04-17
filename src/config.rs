@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
@@ -45,7 +44,6 @@ impl Keybindings {
 
     pub fn matches(&self, bind: &str, code: KeyCode, mods: KeyModifiers) -> bool {
         let (target_code, target_mods) = Self::parse_key(bind);
-        // Use a more relaxed match for modifiers if needed, but let's be strict for now
         code == target_code && mods.contains(target_mods)
     }
 }
@@ -101,8 +99,19 @@ impl Default for DaliConfig {
 }
 
 pub fn load_config() -> DaliConfig {
-    let mut config_path = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    config_path.push(".config/dali/dali.toml");
+    let mut config_path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
+    config_path.push("dali/dali.toml");
+
+    if !config_path.exists() {
+        let default_config = DaliConfig::default();
+        if let Some(parent) = config_path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        if let Ok(serialized) = toml::to_string(&default_config) {
+            let _ = fs::write(&config_path, serialized);
+        }
+        return default_config;
+    }
 
     if let Ok(content) = fs::read_to_string(config_path) {
         toml::from_str(&content).unwrap_or_default()

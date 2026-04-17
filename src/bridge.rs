@@ -1,6 +1,5 @@
-use pyo3::prelude::*;
-use pyo3::types::PyModule;
 use crossbeam_channel::{unbounded, Receiver, Sender};
+use std::process::Command;
 use std::thread;
 
 pub enum BridgeRequest {
@@ -22,29 +21,53 @@ impl IntelligenceBridge {
         let (res_tx, res_rx) = unbounded::<BridgeResponse>();
 
         thread::spawn(move || {
-            Python::with_gil(|py| {
-                let sys = py.import("sys").expect("Failed to import sys");
-                let path = sys.getattr("path").expect("Failed to get sys.path");
-                let _ = path.call_method1("append", ("intelligence",)).expect("Failed to append to sys.path");
-
-                let git: Py<PyModule> = py.import("git_sense").expect("Failed to import git_sense").into();
-
-                while let Ok(req) = req_rx.recv() {
-                    match req {
-                        BridgeRequest::GetGitInfo => {
-                            let git_bind = git.bind(py);
-                            let (branch, modified) = match git_bind.getattr("get_git_status") {
-                                Ok(f) => f.call0().and_then(|r| r.extract::<(String, usize)>()).unwrap_or_else(|_| ("Git Error".to_string(), 0)),
-                                Err(_) => ("No Git".to_string(), 0),
-                            };
-                            let _ = res_tx.send(BridgeResponse::GitInfo(branch, modified));
-                        }
+            while let Ok(req) = req_rx.recv() {
+                match req {
+                    BridgeRequest::GetGitInfo => {
+                        let info = Self::get_git_status_native();
+                        let _ = res_tx.send(BridgeResponse::GitInfo(info.0, info.1));
                     }
                 }
-            });
+            }
         });
 
-        Self { sender: req_tx, receiver: res_rx }
+        Self {
+            sender: req_tx,
+            receiver: res_rx,
+        }
+    }
+
+    fn get_git_status_native() -> (String, usize) {
+        let branch = Command::new("git")
+            .args(["rev-parse", "--abbrev-ref", "HEAD"])
+            .output()
+            .ok()
+            .and_then(|output| {
+                if output.status.success() {
+                    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| "No Git".to_string());
+
+        let modified = Command::new("git")
+            .args(["status", "--porcelain"])
+            .output()
+            .ok()
+            .map(|output| {
+                if output.status.success() {
+                    String::from_utf8_lossy(&output.stdout)
+                        .lines()
+                        .filter(|l| !l.is_empty())
+                        .count()
+                } else {
+                    0
+                }
+            })
+            .unwrap_or(0);
+
+        (branch, modified)
     }
 
     pub fn request_git_info(&self) {
